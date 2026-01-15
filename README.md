@@ -1,4 +1,4 @@
-# ⏰ Recordatorio de Click – Aula Digital SENCE
+# ⏰ Recordatorio de Click – (insertar link) 
 
 Este proyecto nació desde una necesidad real:  
 cuando estoy en clases o programando, muchas veces se me pasa el tiempo y la plataforma de SENCE cierra la sesión por inactividad.  
