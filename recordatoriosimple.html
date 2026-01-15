@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Recordatorio</title>
+  <style>
+    body{
+      font-family: Arial, sans-serif;
+      background:#0f172a;
+      color:#e5e7eb;
+      margin:0;
+      padding:20px;
+    }
+    .box{
+      max-width:800px;
+      margin:0 auto;
+      background:#111827;
+      border:1px solid #243041;
+      border-radius:12px;
+      padding:16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    h1{ margin:0 0 8px 0; font-size:20px; }
+    p{ margin:0 0 14px 0; color:#b6c2d1; font-size:14px; }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 2fr;
+      gap:12px;
+    }
+    @media (max-width:700px){
+      .grid{ grid-template-columns:1fr; }
+    }
+    label{ display:block; font-size:13px; color:#b6c2d1; margin-bottom:6px; }
+    input{
+      width:100%;
+      padding:10px;
+      border-radius:10px;
+      border:1px solid #243041;
+      background:#0b1220;
+      color:#e5e7eb;
+      outline:none;
+    }
+    input:focus{
+      border-color:#3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+    }
+
+    .timer{
+      margin-top:16px;
+      padding:14px;
+      border:1px solid #243041;
+      border-radius:12px;
+      background:#0b1220;
+    }
+    .meta{
+      color:#b6c2d1;
+      font-size:13px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .time{
+      font-size:46px;
+      font-weight:bold;
+      letter-spacing:1px;
+      font-variant-numeric: tabular-nums;
+      margin:10px 0 6px 0;
+    }
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    button{
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid #243041;
+      background:#162033;
+      color:#e5e7eb;
+      cursor:pointer;
+      font-weight:600;
+    }
+    button:hover{ background:#1c2a44; }
+    button:disabled{ opacity:.45; cursor:not-allowed; }
+
+    .primary{ background:#1d3b6a; border-color:#2b4a7d; }
+    .primary:hover{ background:#24477e; }
+
+    .danger{ background:#3a1b22; border-color:#5a2732; }
+    .danger:hover{ background:#4b202a; }
+
+    .progress{
+      height:12px;
+      border-radius:999px;
+      background:#111827;
+      border:1px solid #243041;
+      overflow:hidden;
+      margin-top:10px;
+    }
+    .fill{
+      height:100%;
+      width:0%;
+      background:#3b82f6;
+      transition: width .2s linear;
+    }
+
+    .checkline{
+      margin-top:12px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      color:#b6c2d1;
+      font-size:13px;
+      user-select:none;
+    }
+    .checkline input{ transform: scale(1.1); }
+
+    /* Modal invasivo */
+    .overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.65);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      z-index:999;
+    }
+    .modal{
+      width:min(520px, 100%);
+      background:#111827;
+      border:1px solid #243041;
+      border-radius:12px;
+      padding:16px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.6);
+    }
+    .modal h2{ margin:0 0 8px 0; font-size:18px; }
+    .modal .mini{ color:#b6c2d1; font-size:13px; word-break:break-all; }
+
+    .warn{
+      margin-top:10px;
+      padding:10px;
+      border-radius:10px;
+      border:1px solid #3a2a2a;
+      background:#1a1014;
+      color:#f2b6b6;
+      font-size:13px;
+    }
+    .kbd{
+      display:inline-block;
+      padding:2px 8px;
+      border-radius:999px;
+      border:1px solid #243041;
+      background:#0b1220;
+      color:#cbd5e1;
+      font-size:12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="box">
+    <h1>⏰ Recordatorio de click</h1>
+    <p>Déjalo abierto mientras estás en clases. Te avisará cada X minutos.</p>
+
+    <div class="grid">
+      <div>
+        <label for="minutes">Minutos</label>
+        <input id="minutes" type="number" min="1" max="180" value="25">
+      </div>
+      <div>
+        <label for="url">Link (pega la página)</label>
+        <input id="url" type="url" value="https://auladigital.sence.cl/course/view.php?id=5810">
+      </div>
+    </div>
+
+    <div class="checkline">
+      <input id="autoOpen" type="checkbox" checked>
+      <label for="autoOpen" style="margin:0; cursor:pointer;">
+        Intentar abrir el link automáticamente cuando suene (puede que el navegador lo bloquee)
+      </label>
+    </div>
+
+    <div class="timer">
+      <div class="meta">
+        <div>
+          Estado: <span id="state">Detenido</span> |
+          Siguiente aviso: <span id="next">—</span>
+        </div>
+        <div style="opacity:.9;">
+          Sonido: <span class="kbd">pip-pip</span>
+        </div>
+      </div>
+
+      <div class="time" id="time">25:00</div>
+
+      <div class="progress"><div class="fill" id="fill"></div></div>
+
+      <div class="row">
+        <button class="primary" id="startBtn">Iniciar</button>
+        <button id="pauseBtn" disabled>Pausar</button>
+        <button id="resetBtn" disabled>Reiniciar</button>
+        <button id="openBtn">Abrir link</button>
+        <button id="testBtn">Probar alerta</button>
+        <button class="danger" id="clearBtn">Borrar ajustes</button>
+      </div>
+
+      <p style="margin-top:10px; color:#b6c2d1; font-size:13px;">
+        Tip: cuando salga la alerta, se cierra con <b>Listo</b> o con <span class="kbd">Enter</span>.
+      </p>
+    </div>
+  </div>
+
+  <!-- Modal invasivo -->
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <h2>⚠️ Ojo: ve a hacer el click</h2>
+      <div class="mini">Link: <span id="modalUrl"></span></div>
+
+      <div class="warn">
+        Este aviso se queda abierto hasta que lo cierres con <b>Listo</b>.
+        (No se cierra clickeando afuera ni con <span class="kbd">Esc</span>.)
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <button id="modalOpenBtn">Abrir link</button>
+        <button class="primary" id="modalDoneBtn">Listo (Enter)</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====== Guardado simple ======
+    const KEY = "recordatorio_simple_v2";
+
+    const minutesEl = document.getElementById("minutes");
+    const urlEl = document.getElementById("url");
+    const autoOpenEl = document.getElementById("autoOpen");
+
+    const stateEl = document.getElementById("state");
+    const nextEl = document.getElementById("next");
+    const timeEl = document.getElementById("time");
+    const fillEl = document.getElementById("fill");
+
+    const startBtn = document.getElementById("startBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const openBtn = document.getElementById("openBtn");
+    const testBtn = document.getElementById("testBtn");
+    const clearBtn = document.getElementById("clearBtn");
+
+    const overlay = document.getElementById("overlay");
+    const modalUrl = document.getElementById("modalUrl");
+    const modalOpenBtn = document.getElementById("modalOpenBtn");
+    const modalDoneBtn = document.getElementById("modalDoneBtn");
+
+    function clampInt(v, min, max){
+      let n = parseInt(v, 10);
+      if(Number.isNaN(n)) n = min;
+      return Math.min(max, Math.max(min, n));
+    }
+
+    function saveConfig(){
+      const cfg = {
+        minutes: clampInt(minutesEl.value, 1, 180),
+        url: urlEl.value.trim(),
+        autoOpen: !!autoOpenEl.checked
+      };
+      localStorage.setItem(KEY, JSON.stringify(cfg));
+    }
+
+    function loadConfig(){
+      try{
+        const raw = localStorage.getItem(KEY);
+        if(!raw) return;
+        const cfg = JSON.parse(raw);
+        if(typeof cfg.minutes === "number") minutesEl.value = cfg.minutes;
+        if(typeof cfg.url === "string" && cfg.url.trim()) urlEl.value = cfg.url;
+        if(typeof cfg.autoOpen === "boolean") autoOpenEl.checked = cfg.autoOpen;
+      }catch(e){}
+    }
+
+    // ====== Audio (pip-pip) ======
+    let audioCtx = null;
+
+    function pipPip(){
+      try{
+        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        const tones = [1300, 1000]; // pip-pip
+        tones.forEach((freq, i) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+
+          osc.type = "triangle";
+          osc.frequency.value = freq;
+          gain.gain.value = 0.0001;
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          const t = audioCtx.currentTime + i * 0.2;
+          osc.start(t);
+          gain.gain.exponentialRampToValueAtTime(0.30, t + 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+          osc.stop(t + 0.19);
+        });
+      }catch(e){}
+    }
+
+    // ====== Timer ======
+    let totalSec = 25 * 60;
+    let remainingSec = totalSec;
+    let running = false;
+    let tickTimer = null;
+    let nextFireAt = null;
+
+    // Para hacerlo más invasivo: repetir sonido mientras el modal esté abierto
+    let nagTimer = null;
+
+    function fmtTime(sec){
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
+    }
+
+    function updateUI(){
+      timeEl.textContent = fmtTime(remainingSec);
+
+      const done = totalSec - remainingSec;
+      const pct = totalSec === 0 ? 0 : (done / totalSec) * 100;
+      fillEl.style.width = Math.min(100, Math.max(0, pct)) + "%";
+
+      stateEl.textContent = running ? "Corriendo" : "Detenido / pausado";
+      startBtn.disabled = running;
+      pauseBtn.disabled = !running;
+      resetBtn.disabled = (!running && remainingSec === totalSec);
+    }
+
+    function updateNextLabel(){
+      if(!nextFireAt){
+        nextEl.textContent = "—";
+        return;
+      }
+      // Mostrar hora real (como te diste cuenta que era)
+      const d = nextFireAt;
+      const hh = String(d.getHours()).padStart(2,"0");
+      const mm = String(d.getMinutes()).padStart(2,"0");
+      nextEl.textContent = `${hh}:${mm}`;
+    }
+
+    function syncFromInput(){
+      const mins = clampInt(minutesEl.value, 1, 180);
+      totalSec = mins * 60;
+
+      if(!running){
+        remainingSec = totalSec;
+      }
+
+      saveConfig();
+      updateUI();
+    }
+
+    // Si cambias minutos mientras corre, aplica al tiro
+    function applyChangeWhileRunning(){
+      if(running){
+        remainingSec = totalSec;
+        nextFireAt = new Date(Date.now() + remainingSec * 1000);
+        updateNextLabel();
+        updateUI();
+      }
+    }
+
+    function start(){
+      syncFromInput();
+      running = true;
+      nextFireAt = new Date(Date.now() + remainingSec * 1000);
+      updateNextLabel();
+      updateUI();
+
+      if(tickTimer) clearInterval(tickTimer);
+      tickTimer = setInterval(tick, 250);
+    }
+
+    function pause(){
+      running = false;
+      if(tickTimer) clearInterval(tickTimer);
+      tickTimer = null;
+      nextFireAt = null;
+      updateNextLabel();
+      updateUI();
+    }
+
+    function reset(){
+      pause();
+      syncFromInput();
+      remainingSec = totalSec;
+      updateUI();
+    }
+
+    function tick(){
+      if(!running || !nextFireAt) return;
+
+      const diffMs = nextFireAt.getTime() - Date.now();
+      const diffSec = Math.ceil(diffMs / 1000);
+
+      remainingSec = Math.max(0, diffSec);
+      updateUI();
+
+      if(remainingSec <= 0){
+        showAlert();
+
+        // reinicia ciclo
+        remainingSec = totalSec;
+        nextFireAt = new Date(Date.now() + totalSec * 1000);
+        updateNextLabel();
+        updateUI();
+      }
+    }
+
+    // ====== Modal invasivo ======
+    function showAlert(){
+      modalUrl.textContent = urlEl.value.trim() || "(sin link)";
+      overlay.style.display = "flex";
+
+      // sonido al abrir
+      pipPip();
+
+      // repetir sonido mientras esté abierto
+      stopNag();
+      nagTimer = setInterval(() => pipPip(), 6000);
+
+      // intentar abrir link automáticamente (a veces bloqueado por popups)
+      if(autoOpenEl.checked){
+        openLink();
+      }
+
+      setTimeout(() => modalDoneBtn.focus(), 50);
+    }
+
+    function hideAlert(){
+      overlay.style.display = "none";
+      stopNag();
+    }
+
+    function stopNag(){
+      if(nagTimer) clearInterval(nagTimer);
+      nagTimer = null;
+    }
+
+    function openLink(){
+      const url = urlEl.value.trim();
+      if(!url) return;
+      window.open(url, "_blank");
+    }
+
+    // ====== Events ======
+    minutesEl.addEventListener("input", () => {
+      syncFromInput();
+      applyChangeWhileRunning();
+    });
+
+    urlEl.addEventListener("change", saveConfig);
+    autoOpenEl.addEventListener("change", saveConfig);
+
+    startBtn.addEventListener("click", start);
+    pauseBtn.addEventListener("click", pause);
+    resetBtn.addEventListener("click", reset);
+
+    openBtn.addEventListener("click", openLink);
+
+    testBtn.addEventListener("click", () => {
+      // Esto también “habilita” el audio en algunos navegadores
+      pipPip();
+      showAlert();
+    });
+
+    clearBtn.addEventListener("click", () => {
+      localStorage.removeItem(KEY);
+      pause();
+      minutesEl.value = 25;
+      urlEl.value = "https://auladigital.sence.cl/course/view.php?id=5810";
+      autoOpenEl.checked = true;
+      syncFromInput();
+      nextEl.textContent = "—";
+      alert("Listo. Borré los ajustes guardados.");
+    });
+
+    modalOpenBtn.addEventListener("click", openLink);
+    modalDoneBtn.addEventListener("click", hideAlert);
+
+    // IMPORTANTE: no cerramos con Escape, ni clickeando afuera.
+    document.addEventListener("keydown", (e) => {
+      if(overlay.style.display === "flex"){
+        if(e.key === "Enter"){
+          e.preventDefault();
+          hideAlert();
+        }
+      }
+    });
+
+    // ====== Init ======
+    loadConfig();
+    syncFromInput();
+    updateNextLabel();
+  </script>
+</body>
+</html>
